@@ -18,22 +18,21 @@ ELSE()
     SET(BUILD_DIR x86)
 ENDIF()
 
-# CellML include directory
+# Machine directory
 
 IF(WIN32)
-    INCLUDE_DIRECTORIES(
-        cellml/inc/windows/x86
-    )
+    SET(MACHINE_DIR windows/x86)
 ELSEIF(APPLE)
-    INCLUDE_DIRECTORIES(
-        cellml/inc/macosx
-    )
+    SET(MACHINE_DIR macosx)
 ELSE()
-    INCLUDE_DIRECTORIES(
-        cellml/inc/linux/${BUILD_DIR}
-    )
+    SET(MACHINE_DIR linux/${BUILD_DIR})
 ENDIF()
 
+# CellML include directory
+
+INCLUDE_DIRECTORIES(
+    cellml/inc/${MACHINE_DIR}
+)
 
 # Build the CellML program
 
@@ -43,37 +42,29 @@ ADD_EXECUTABLE(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
 
 # CellML program dependencies
 
-IF(WIN32)
-    TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-        ${CMAKE_SOURCE_DIR}/cellml/lib/windows/x86/libcellml.dll.a
-    )
-ELSEIF(APPLE)
-    TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-        ${CMAKE_SOURCE_DIR}/cellml/lib/macosx/libcellml.dylib
-    )
-ELSE()
-    TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-        ${CMAKE_SOURCE_DIR}/cellml/lib/linux/${BUILD_DIR}/libcellml.so
-    )
-ENDIF()
+SET(CELLML_LIBRARY_FILE ${CMAKE_SOURCE_DIR}/cellml/lib/${MACHINE_DIR}/libcellml${CMAKE_SHARED_LIBRARY_SUFFIX})
+
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}
+    ${CELLML_LIBRARY_FILE}
+)
 
 # Copy the CellML library to the build directory
 
 IF(WIN32)
     ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME} POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/cellml/lib/windows/x86/libcellml.dll ${CMAKE_BINARY_DIR})
+                       COMMAND ${CMAKE_COMMAND} -E copy ${CELLML_LIBRARY_FILE} ${CMAKE_BINARY_DIR})
 ELSEIF(APPLE)
     ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME} POST_BUILD
                        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/PlugIns)
 
     ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME} POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/cellml/lib/macosx/libcellml.dylib ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/PlugIns)
+                       COMMAND ${CMAKE_COMMAND} -E copy ${CELLML_LIBRARY_FILE} ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/PlugIns)
 
     ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME} POST_BUILD
-                       COMMAND install_name_tool -change libcellml.dylib
-                                                         @executable_path/../PlugIns/libcellml.dylib
+                       COMMAND install_name_tool -change libcellml${CMAKE_SHARED_LIBRARY_SUFFIX}
+                                                         @executable_path/../PlugIns/libcellml${CMAKE_SHARED_LIBRARY_SUFFIX}
                                                          ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/${PROJECT_NAME})
 ELSE()
     ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME} POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/cellml/lib/linux/${BUILD_DIR}/libcellml.so ${CMAKE_BINARY_DIR})
+                       COMMAND ${CMAKE_COMMAND} -E copy ${CELLML_LIBRARY_FILE} ${CMAKE_BINARY_DIR})
 ENDIF()
