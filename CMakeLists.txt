@@ -13,9 +13,9 @@ SET(SOURCES
 # Whether we are building for 32-bit or 64-bit
 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    SET(64BIT_MODE ON)
+    SET(BUILD_DIR x64)
 ELSE()
-    SET(64BIT_MODE OFF)
+    SET(BUILD_DIR x86)
 ENDIF()
 
 # CellML include directory
@@ -29,15 +29,9 @@ ELSEIF(APPLE)
         cellml/inc/macosx
     )
 ELSE()
-    IF(64BIT_MODE)
-        INCLUDE_DIRECTORIES(
-            cellml/inc/linux/x64
-        )
-    ELSE()
-        INCLUDE_DIRECTORIES(
-            cellml/inc/linux/x86
-        )
-    ENDIF()
+    INCLUDE_DIRECTORIES(
+        cellml/inc/linux/${BUILD_DIR}
+    )
 ENDIF()
 
 
@@ -58,15 +52,9 @@ ELSEIF(APPLE)
         ${CMAKE_SOURCE_DIR}/cellml/lib/macosx/libcellml.dylib
     )
 ELSE()
-    IF(64BIT_MODE)
-        TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-            ${CMAKE_SOURCE_DIR}/cellml/lib/linux/x64/libcellml.so
-        )
-    ELSE()
-        TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-            ${CMAKE_SOURCE_DIR}/cellml/lib/linux/x86/libcellml.so
-        )
-    ENDIF()
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}
+        ${CMAKE_SOURCE_DIR}/cellml/lib/linux/${BUILD_DIR}/libcellml.so
+    )
 ENDIF()
 
 # Copy the CellML library to the build directory
@@ -86,11 +74,6 @@ ELSEIF(APPLE)
                                                          @executable_path/../PlugIns/libcellml.dylib
                                                          ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/${PROJECT_NAME})
 ELSE()
-    IF(64BIT_MODE)
-        ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME} POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/cellml/lib/linux/x64/libcellml.so ${CMAKE_BINARY_DIR})
-    ELSE()
-        ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME} POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/cellml/lib/linux/x86/libcellml.so ${CMAKE_BINARY_DIR})
-    ENDIF()
+    ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME} POST_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/cellml/lib/linux/${BUILD_DIR}/libcellml.so ${CMAKE_BINARY_DIR})
 ENDIF()
