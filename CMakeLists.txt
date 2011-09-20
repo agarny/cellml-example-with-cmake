@@ -10,22 +10,18 @@ SET(SOURCES
     src/main.cpp
 )
 
-# Whether we are building for 32-bit or 64-bit
-
-IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    SET(BUILD_DIR x64)
-ELSE()
-    SET(BUILD_DIR x86)
-ENDIF()
-
-# Machine directory
+# Machine-specific directory
 
 IF(WIN32)
     SET(MACHINE_DIR windows/x86)
 ELSEIF(APPLE)
     SET(MACHINE_DIR macosx)
 ELSE()
-    SET(MACHINE_DIR linux/${BUILD_DIR})
+    IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        SET(MACHINE_DIR linux/x64)
+    ELSE()
+        SET(MACHINE_DIR linux/x86)
+    ENDIF()
 ENDIF()
 
 # CellML include directory
